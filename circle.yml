@@ -1,0 +1,37 @@
+general:
+  branches:
+    only:
+      - master
+
+machine:
+  java:
+    version: openjdk8
+    pre:
+      - sudo curl -L -o /usr/bin/docker 'https://s3-external-1.amazonaws.com/circle-downloads/docker-1.9.0-circleci'
+      - sudo chmod 0755 /usr/bin/docker
+  services:
+    - docker
+
+dependencies:
+  override:
+  - sudo wget 'https://storage.googleapis.com/kubernetes-release/release/v1.6.2/bin/linux/amd64/kubectl' -O /usr/local/bin/kubectl
+  - sudo chmod 755 /usr/local/bin/kubectl
+
+
+compile:
+  override:
+    - ./gradlew clean build -x test
+    - docker build -t foobaar/sturdy-engine:$CIRCLE_SHA1 .
+
+
+general:
+  artifacts:
+    - build/reports/
+
+test:
+  post:
+    - docker run -d -p 8080:8080 --name sturdy-engine foobaar/sturdy-engine:$CIRCLE_SHA1; sleep 10
+    - curl --retry 4 --retry-delay 4 localhost:8080/sturdy-engine/manage/health | grep UP
+    - curl localhost:8080/sturdy-engine/manage/info | jq
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit/
+    - find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;

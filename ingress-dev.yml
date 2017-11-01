@@ -1,0 +1,20 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: sturdy-engine
+  namespace: default
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/subnets: subnet-foobaar1,subnet-foobaar2,subnet-foobaar3
+    alb.ingress.kubernetes.io/security-groups: foobaar-i24923u,foobaar-i249224,foobaar-i2492124
+    alb.ingress.kubernetes.io/tags: Environment=dev
+    alb.ingress.kubernetes.io/healthcheck-path: /sturdy-engine/manage/health
+spec:
+  rules:
+  - host: sturdy-engine.dev.foobaar.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: sturdy-engine
+          servicePort: 80
